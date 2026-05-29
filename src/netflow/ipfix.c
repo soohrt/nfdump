@@ -1639,16 +1639,20 @@ static void Process_ipfix_nbar_option_data(exporter_entry_t *exporter_entry, Flo
     size_t data_size = nbarOption->id.length + nbarOption->name.length + nbarOption->desc.length;
     // size of record
     size_t option_size = optionTemplate->optionSize;
+    if (nbarOption->name.length == 0 && nbarOption->desc.length == 0) {
+        LogInfo("Process_nbar_option: nbar name and description length 0 - skip data");
+        return;
+    }
+    if (option_size == 0 || option_size > size_left) {
+        LogError("Process_nbar_option: nbar option size error: option size: %zu, size left: %u", option_size, size_left);
+        return;
+    }
     // number of records in data
     unsigned numRecords = size_left / option_size;
     dbg_printf("[%u] nbar option data - records: %u, size: %zu\n", exporter_entry->info.id, numRecords, option_size);
 
-    if (numRecords == 0 || option_size == 0 || option_size > size_left) {
+    if (numRecords == 0) {
         LogError("Process_nbar_option: nbar option size error: option size: %zu, size left: %u", option_size, size_left);
-        return;
-    }
-    if (nbarOption->name.length == 0 && nbarOption->desc.length == 0) {
-        LogInfo("Process_nbar_option: nbar name and description length 0 - skip data");
         return;
     }
 
@@ -1784,12 +1788,20 @@ static void Process_ifvrf_option_data(exporter_entry_t *exporter_entry, FlowSour
     size_t data_size = nameOption->name.length + sizeof(uint32_t);
     // size of record
     size_t option_size = optionTemplate->optionSize;
+    if (nameOption->name.length == 0) {
+        LogInfo("Process_ifvrf_option: name length 0 - skip data");
+        return;
+    }
+    if (option_size == 0 || option_size > size_left) {
+        LogError("Process_ifvrf_option: name option size error: option size: %zu, size left: %u", option_size, size_left);
+        return;
+    }
     // number of records in data
     unsigned numRecords = size_left / option_size;
     dbg_printf("[%u] name option data - records: %u, size: %zu\n", exporter_entry->info.id, numRecords, option_size);
 
-    if (numRecords == 0 || option_size == 0 || option_size > size_left) {
-        LogError("Process_ifvrf_option: nbar option size error: option size: %zu, size left: %u", option_size, size_left);
+    if (numRecords == 0) {
+        LogError("Process_ifvrf_option: name option size error: option size: %zu, size left: %u", option_size, size_left);
         return;
     }
 
