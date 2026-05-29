@@ -941,6 +941,14 @@ static inline void skipBytes(SFSample *sample, uint32_t skip) {
     }
 }  // End of skipBytes
 
+static inline void skipData32Array(SFSample *sample, uint32_t count) {
+    uint8_t *datap = (uint8_t *)sample->datap;
+    if (datap > sample->endp || count > (uint32_t)((sample->endp - datap) / sizeof(uint32_t))) {
+        SFABORT(sample, SF_ABORT_EOS);
+    }
+    skipBytes(sample, count * (uint32_t)sizeof(uint32_t));
+}  // End of skipData32Array
+
 static uint32_t sf_log_next32(SFSample *sample, char *fieldName) {
     uint32_t val = getData32(sample);
 
@@ -1092,7 +1100,7 @@ static void readExtendedGateway_v2(SFSample *sample) {
     if (sample->dst_as_path_len > 0) {
         sample->dst_as_path = sample->datap;
         /* and skip over it in the input */
-        skipBytes(sample, sample->dst_as_path_len * 4);
+        skipData32Array(sample, sample->dst_as_path_len);
         /* fill in the dst and dst_peer fields too */
         sample->dst_peer_as = ntohl(sample->dst_as_path[0]);
         sample->dst_as = ntohl(sample->dst_as_path[sample->dst_as_path_len - 1]);
@@ -1184,7 +1192,7 @@ static void readExtendedGateway(SFSample *sample) {
     /* just point at the communities array */
     if (sample->communities_len > 0) sample->communities = sample->datap;
     /* and skip over it in the input */
-    skipBytes(sample, sample->communities_len * 4);
+    skipData32Array(sample, sample->communities_len);
 
     sample->extended_data_tag |= SASAMPLE_EXTENDED_DATA_GATEWAY;
     if (sample->communities_len > 0) {
@@ -1261,7 +1269,7 @@ static void mplsLabelStack(SFSample *sample, char *fieldName) {
     /* just point at the lablelstack array */
     if (lstk.depth > 0) lstk.stack = (uint32_t *)sample->datap;
     /* and skip over it in the input */
-    skipBytes(sample, lstk.depth * 4);
+    skipData32Array(sample, lstk.depth);
 
 #ifdef DEVEL
     if (lstk.depth > 0) {
@@ -1415,7 +1423,7 @@ static void readExtendedVlanTunnel(SFSample *sample) {
     /* just point at the lablelstack array */
     if (lstk.depth > 0) lstk.stack = (uint32_t *)sample->datap;
     /* and skip over it in the input */
-    skipBytes(sample, lstk.depth * 4);
+    skipData32Array(sample, lstk.depth);
 
 #ifdef DEVEL
     if (lstk.depth > 0) {
